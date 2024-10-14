@@ -167,7 +167,8 @@ public class AuthController {
     }
 
 
-    // get the username from UserDetails Object
+    // get the username fro
+    // m UserDetails Object
     @GetMapping("/user-name")
     public String getCurrentAuthenticatedUsername(@AuthenticationPrincipal UserDetails userDetails)
     {
