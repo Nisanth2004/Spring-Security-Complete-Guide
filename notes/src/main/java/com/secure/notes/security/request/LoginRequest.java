@@ -1,15 +1,11 @@
 package com.secure.notes.security.request;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
-@Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
 public class LoginRequest {
     private String username;
-
     private String password;
-
-
 }

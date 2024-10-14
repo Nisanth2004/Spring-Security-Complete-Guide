@@ -24,7 +24,6 @@ public class JwtUtils {
     @Value("${spring.app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
-    // get the token from header
     public String getJwtFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         logger.debug("Authorization Header: {}", bearerToken);
@@ -41,7 +40,7 @@ public class JwtUtils {
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key())
-                .compact(); // return jwt as compact string
+                .compact();
     }
 
     public String getUserNameFromJwtToken(String token) {
@@ -58,7 +57,8 @@ public class JwtUtils {
     public boolean validateJwtToken(String authToken) {
         try {
             System.out.println("Validate");
-            Jwts.parser().verifyWith((SecretKey) key()).build().parseSignedClaims(authToken);
+            Jwts.parser().verifyWith((SecretKey) key())
+                    .build().parseSignedClaims(authToken);
             return true;
         } catch (MalformedJwtException e) {
             logger.error("Invalid JWT token: {}", e.getMessage());

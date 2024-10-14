@@ -16,8 +16,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @NoArgsConstructor
 @Data
 public class UserDetailsImpl implements UserDetails {
-
-    // custom implementation of UserDetails
     private static final long serialVersionUID = 1L;
 
     private Long id;
@@ -41,7 +39,6 @@ public class UserDetailsImpl implements UserDetails {
         this.authorities = authorities;
     }
 
-    // convert User entity to UserDetails Object
     public static UserDetailsImpl build(User user) {
         GrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().getRoleName().name());
 

@@ -55,8 +55,6 @@ public class AuthController {
     @Autowired
     UserService userService;
 
-
-    // AuthController.java
     @PostMapping("/public/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication;
@@ -70,27 +68,25 @@ public class AuthController {
             return new ResponseEntity<Object>(map, HttpStatus.NOT_FOUND);
         }
 
-//      set the authentication
+//      Set the authentication
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        // from userdetails username only it genarate the token
         String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
 
-        // Collect roles from the UserDetails for response
+        // Collect roles from the UserDetails
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
         // Prepare the response body, now including the JWT token directly in the body
-        LoginResponse response = new LoginResponse(userDetails.getUsername(), roles, jwtToken);
+        LoginResponse response = new LoginResponse(userDetails.getUsername(),
+                roles, jwtToken);
 
         // Return the response entity with the JWT token included in the response body
         return ResponseEntity.ok(response);
     }
-
-
 
 
     @PostMapping("/public/signup")
@@ -111,7 +107,6 @@ public class AuthController {
         Set<String> strRoles = signUpRequest.getRole();
         Role role;
 
-        // assign default role
         if (strRoles == null || strRoles.isEmpty()) {
             role = roleRepository.findByRoleName(AppRole.ROLE_USER)
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
@@ -166,16 +161,8 @@ public class AuthController {
         return ResponseEntity.ok().body(response);
     }
 
-
-    // get the username fro
-    // m UserDetails Object
-    @GetMapping("/user-name")
-    public String getCurrentAuthenticatedUsername(@AuthenticationPrincipal UserDetails userDetails)
-    {
-       return (userDetails!=null)?userDetails.getUsername():"";
+    @GetMapping("/username")
+    public String currentUserName(@AuthenticationPrincipal UserDetails userDetails) {
+        return (userDetails != null) ? userDetails.getUsername() : "";
     }
-
-
-
-
 }
