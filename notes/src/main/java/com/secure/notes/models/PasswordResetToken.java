@@ -29,10 +29,11 @@ public class PasswordResetToken {
     // Instant represents a point in time with a lot grater precision than that of date,
     // Instant gives precision of nanasecond where Date only offers milloseconds
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id",nullable = false)
+
     private boolean used; // whether the token is used or not
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id",nullable = false)
     private User user;
 
 
