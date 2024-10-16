@@ -29,6 +29,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     public void logNoteUpdate(String username, Note note){
+        // logging creation fo NOTES
         AuditLog log = new AuditLog();
         log.setAction("UPDATE");
         log.setUsername(username);
