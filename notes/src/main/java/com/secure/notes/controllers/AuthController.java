@@ -184,4 +184,21 @@ public class AuthController {
 
     }
 
+
+    // after sucessfully sent an email this method is invoked once user is clicked the link
+    @PostMapping("/public/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token,@RequestParam String newPassword)
+    {
+      try
+      {
+          userService.resetPassword(token,newPassword);
+          return ResponseEntity.ok(new MessageResponse("Password Reset Successfull"));
+      }
+      catch(RuntimeException e)
+      {
+           return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                   .body(new MessageResponse(e.getMessage()));
+      }
+    }
+
 }
