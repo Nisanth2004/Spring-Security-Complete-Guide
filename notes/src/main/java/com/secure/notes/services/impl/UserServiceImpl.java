@@ -8,8 +8,10 @@ import com.secure.notes.models.User;
 import com.secure.notes.repositories.PasswordResetTokenRepository;
 import com.secure.notes.repositories.RoleRepository;
 import com.secure.notes.repositories.UserRepository;
+import com.secure.notes.services.TotpService;
 import com.secure.notes.services.UserService;
 import com.secure.notes.util.EmailService;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,6 +43,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     EmailService emailService;
+
+    @Autowired
+    TotpService totpService;
 
     @Override
     public void updateUserRole(Long userId, String roleName) {
@@ -213,6 +218,58 @@ public class UserServiceImpl implements UserService {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             return userRepository.save(user);
 
+    }
+
+    // genrate the secret if user click enalbe 2fa means in frontend
+    @Override
+    public GoogleAuthenticatorKey generate2FASecret(Long userId)
+    {
+        // get the user
+        User user=userRepository.findById(userId)
+                .orElseThrow(()->new RuntimeException("User Not found"));
+
+        // genrate the secret if user click enalbe 2fa means in frontend
+        GoogleAuthenticatorKey key=totpService.generateSecret();
+        user.setTwoFactorSecret(key.getKey());
+        userRepository.save(user);
+        return key;
+
+
+    }
+
+
+    @Override
+    public boolean validate2FACode(Long userId, int code)
+    {
+        // get the user
+        User user=userRepository.findById(userId)
+                .orElseThrow(()->new RuntimeException("User Not found"));
+        return totpService.verifyCode(user.getTwoFactorSecret(),code);
+    }
+
+    @Override
+    public void enable2FA(Long userId)
+    {
+        // get the user
+        User user=userRepository.findById(userId)
+                .orElseThrow(()->new RuntimeException("User Not found"));
+
+        user.setTwoFactorEnabled(true);
+        userRepository.save(user);
+
+
+    }
+
+    @Override
+    public void disable2FA(Long userId)
+    {
+
+        // get the user
+        User user=userRepository.findById(userId)
+                .orElseThrow(()->new RuntimeException("User Not found"));
+
+        user.setTwoFactorEnabled(false);
+        userRepository.save(user);
     }
 
 

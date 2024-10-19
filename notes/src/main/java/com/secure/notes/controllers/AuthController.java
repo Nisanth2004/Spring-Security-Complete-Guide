@@ -11,7 +11,11 @@ import com.secure.notes.security.request.SignupRequest;
 import com.secure.notes.security.response.LoginResponse;
 import com.secure.notes.security.response.MessageResponse;
 import com.secure.notes.security.response.UserInfoResponse;
+import com.secure.notes.security.services.UserDetailsImpl;
+import com.secure.notes.services.TotpService;
 import com.secure.notes.services.UserService;
+import com.secure.notes.util.AuthUtil;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -55,6 +59,13 @@ public class AuthController {
     @Autowired
     UserService userService;
 
+    @Autowired
+    AuthUtil authUtil;
+
+    @Autowired
+    TotpService totpService;
+
+
     @PostMapping("/public/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication;
@@ -71,7 +82,7 @@ public class AuthController {
 //      Set the authentication
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
 
@@ -201,4 +212,94 @@ public class AuthController {
       }
     }
 
-}
+
+    // Step 1:.Enable Multi factor AUthentication
+
+
+    // Enable 2fa
+    @PostMapping("/enable-2fa")
+    public ResponseEntity<String> enable2FA()
+    {
+        // 1.if the user wnat to enable 2fa first get the userid
+        Long userId= authUtil.loggedInUserId();
+
+        // 2.Generate the secret
+        GoogleAuthenticatorKey secret=userService.generate2FASecret(userId);
+
+        // 3.Generate the qrcode
+        String qrCodeUrl=totpService.getQrCodeUrl(secret,userService.getUserById(userId).getUserName());
+
+        return ResponseEntity.ok(qrCodeUrl);
+
+    }
+
+
+    // Disbale 2fa
+    @PostMapping("/disable-2fa")
+    public ResponseEntity<String> disable2FA()
+    {
+        // 1.if the user wnat to disable 2fa first get the userid
+        Long userId= authUtil.loggedInUserId();
+        userService.disable2FA(userId);
+
+
+        return ResponseEntity.ok("2FA Disabled");
+
+    }
+
+    // to enable 2fa we should verify that code whcih is provided by user
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<String> verify2FA(@RequestParam int code)
+    {
+
+        Long userId= authUtil.loggedInUserId();
+        boolean isvalid=userService.validate2FACode(userId,code);
+        if(isvalid)
+        {
+            userService.enable2FA(userId);
+            return ResponseEntity.ok("2FA Verified");
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid 2FA CODE");
+        }
+    }
+
+    // verify the user 2fa status
+    @GetMapping("/user/2fa-status")
+    public ResponseEntity<?> get2FAStatus()
+    {
+        User user= authUtil.loggedInUser();
+        if(user!=null)
+        {
+            return ResponseEntity.ok().body(Map.of("is2faEnabled",user.isTwoFactorEnabled()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User Not Found");
+        }
+    }
+
+
+    // Step 2: Login with MFA Flow
+
+    // verify the 2fa login
+    @PostMapping("/public/verify-2fa-login")
+    public ResponseEntity<String> verify2FALogin(@RequestParam int code,
+                                                 @RequestParam String jwtToken)
+    {
+
+        // this is public api
+       String username=jwtUtils.getUserNameFromJwtToken(jwtToken);
+
+       // get the username from public or jwtToken
+       User user=userService.findByUsername(username);
+       boolean isvalid=userService.validate2FACode(user.getUserId(),code);
+        if(isvalid)
+        {
+            return ResponseEntity.ok("2FA Verified");
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid 2FA CODE");
+        }
+}}
